@@ -1,11 +1,23 @@
 // Grab the articles as a json
 $.getJSON("/articles", function(data) {
   // For each one
-  for (var i = 0; i < data.length; i++) {
+  for (var i = 0; i < 10; i++) {
     // Display the apropos information on the page
     $("#articles").append("<p data-id='" + data[i]._id + "'>" + data[i].title + "<br />" + data[i].link + "</p>");
   }
 });
+
+//onclick for the scrape button
+
+$(document).on("click", "#scrapeButton", function() {
+  $.ajax({
+    url: "/scrape", method: "GET"
+
+  }).then(function(response) {
+// console.log(response);
+  })
+})
+
 
 
 // Whenever someone clicks a p tag
@@ -22,7 +34,7 @@ $(document).on("click", "p", function() {
   })
     // With that done, add the note information to the page
     .then(function(data) {
-      console.log(data);
+      // console.log(data);
       // The title of the article
       $("#notes").append("<h2>" + data.title + "</h2>");
       // An input to enter a new title
@@ -63,10 +75,10 @@ $(document).on("click", "#savenote", function() {
       // Log the response
       console.log(data);
       // Empty the notes section
-      $("#notes").empty();
+      // $("#notes").empty();
     });
 
   // Also, remove the values entered in the input and textarea for note entry
-  $("#titleinput").val("");
-  $("#bodyinput").val("");
+  // $("#titleinput").val("");
+  // $("#bodyinput").val("");
 });
