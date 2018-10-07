@@ -13,8 +13,9 @@ var request = require("request");
 // Require all models
 var db = require("./models");
 
+var PORT = 3000;
+
 // Initialize Express
-var PORT = process.env.PORT || 3000;
 var app = express();
 
 // Configure middleware
@@ -22,68 +23,63 @@ var app = express();
 // Use morgan logger for logging requests
 app.use(logger("dev"));
 // Use body-parser for handling form submissions
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 // Use express.static to serve the public folder as a static directory
 app.use(express.static("public"));
 
 // Connect to the Mongo DB
-// mongoose.connect("mongodb://127.0.0.1/mongoHomework");
+mongoose.connect("mongodb://127.0.0.1/mongoHomework");
 
 // Routes
 
-app.get("/", function (req, res) {
+app.get("/", function(req, res) {
   res.send(index.html);
 });
 
-// A GET route for scraping the invision blog
+// A GET route for scraping the website
 app.get("/scrape", function (req, res) {
+  // First, we grab the body of the html with request
+  axios.get("http://www.nytimes.com/").then(function (response) {
+    console.log(response);
 
-  // request("http://www.echojs.com/", function(error, response, html) {
-  axios.get("http://www.echojs.com/").then(function (response) {
-    var $ = cheerio.load(html);
+  // axios.get("http://www.echojs.com/").then(function (response) {
+    // Then, we load that into cheerio and save it to $ for a shorthand selector
+    var $ = cheerio.load(response.data);
 
-    $(".title-link").each(function (i, element) {
+    // Now, we grab every h2 within an article tag, and do the following:
+    $("article h2").each(function (i, element) {
+      // Save an empty result object
+      var result = {};
 
-      var title = $(element).children().text();
-      var link = $(element).attr("href");
-      var snippet = $(element).siblings('p').text().trim();
-      var articleCreated = moment().format("YYYY MM DD hh:mm:ss");
+      // Add the text and href of every link, and save them as properties of the result object
+      result.title = $(this)
+        .children("a")
+        .text();
+      result.link = $(this)
+        .children("a")
+        .attr("href");
 
-      var result = {
-        title: title,
-        link: link,
-        snippet: snippet,
-        articleCreated: articleCreated,
-        isSaved: false
-      }
-
-      console.log(result);
-
-      db.Article.findOne({ title: title }).then(function (data) {
-
-        console.log(data);
-
-        if (data === null) {
-
-          db.Article.create(result).then(function (dbArticle) {
-            res.json(dbArticle);
-          });
-        }
-      }).catch(function (err) {
-        res.json(err);
-      });
-
+      // Create a new Article using the `result` object built from scraping
+      db.Article.create(result)
+        .then(function (dbArticle) {
+          // View the added result in the console
+          console.log(dbArticle);
+        })
+        .catch(function (err) {
+          // If an error occurred, send it to the client
+          return res.json(err);
+        });
     });
 
+    // If we were able to successfully scrape and save an Article, send a message to the client
+    res.send("Scrape Complete");
   });
 });
 
 // Route for getting all Articles from the db
 app.get("/articles", function (req, res) {
   // Grab every document in the Articles collection
-  db.Article
-    .find({})
-    .sort({ articleCreated: -1 })
+  db.Article.find({})
     .then(function (dbArticle) {
       // If we were able to successfully find Articles, send them back to the client
       res.json(dbArticle);
@@ -130,52 +126,31 @@ app.post("/articles/:id", function (req, res) {
     });
 });
 
-// Route for saving/updating article to be saved
-app.put("/saved/:id", function (req, res) {
-
-  db.Article
-    .findByIdAndUpdate({ _id: req.params.id }, { $set: { isSaved: true } })
-    .then(function (dbArticle) {
-      res.json(dbArticle);
-    })
-    .catch(function (err) {
-      res.json(err);
-    });
-});
-
 // Route for getting saved article
-app.get("/saved", function (req, res) {
+app.get("/saved", function(req, res) {
 
   db.Article
     .find({ isSaved: true })
-    .then(function (dbArticle) {
+    .then(function(dbArticle) {
       res.json(dbArticle);
     })
-    .catch(function (err) {
+    .catch(function(err) {
       res.json(err);
     });
 });
 
 // Route for deleting/updating saved article
-app.put("/delete/:id", function (req, res) {
+app.put("/delete/:id", function(req, res) {
 
   db.Article
-    .findByIdAndUpdate({ _id: req.params.id }, { $set: { isSaved: false } })
-    .then(function (dbArticle) {
+    .findByIdAndUpdate({ _id: req.params.id }, { $set: { isSaved: false }})
+    .then(function(dbArticle) {
       res.json(dbArticle);
     })
-    .catch(function (err) {
+    .catch(function(err) {
       res.json(err);
     });
 });
-
-// If deployed, use the deployed database. Otherwise use the local mongoHeadlines database
-var MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1/mongoHeadlines";
-
-// Set mongoose to leverage built in JavaScript ES6 Promises
-// Connect to the Mongo DB
-mongoose.Promise = Promise;
-mongoose.connect(MONGODB_URI);
 
 // Start the server
 app.listen(PORT, function () {
