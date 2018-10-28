@@ -50,18 +50,20 @@ app.get("/scrape", function (req, res) {
                 // Add the text and href of every link, and save them as properties of the result object
                 result.title = a.text();
                 // need to figure out how to get this link
-                result.link=a.link();
-                console.log(result.title);
+                result.link= url
+                console.log(result, "this is the object with information that we scrapped");
                 
                 db.Article.create(result).then(function (dbArticle) {
-                    res.json(dbArticle);
+                    console.log("article created");
                 });
 
 
             });
         };
+       
     });
     // end request
+    res.send("Scrape completed");
 });
 
 
@@ -118,6 +120,7 @@ app.put("/saved/:id", function (req, res) {
     db.Article
         .findByIdAndUpdate({ _id: req.params.id }, { $set: { isSaved: true } })
         .then(function (dbArticle) {
+            console.log(dbArticle, "this is the saved article");
             res.json(dbArticle);
         })
         .catch(function (err) {
