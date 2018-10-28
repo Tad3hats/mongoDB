@@ -57,27 +57,6 @@ app.get("/scrape", function (req, res) {
                     res.json(dbArticle);
                 });
 
-                // request("https://www.invisionapp.com/blog", function (error, response, html) {
-
-                //     var $ = cheerio.load(html);
-
-                //     $(".title-link").each(function (i, element) {
-
-                //         var title = $(element).children().text();
-                //         var link = $(element).attr("href");
-                //         var snippet = $(element).siblings('p').text().trim();
-                //         var articleCreated = moment().format("YYYY MM DD hh:mm:ss");
-
-                //         var result = {
-                //             title: title,
-                //             link: link,
-                //             snippet: snippet,
-                //             articleCreated: articleCreated,
-                //             isSaved: false
-                //         }
-
-                //         console.log(result);
-
 
             });
         };
